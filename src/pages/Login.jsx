@@ -21,13 +21,12 @@ export function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-laranja flex items-center justify-center">
-              <span className="text-2xl font-bold text-verde-escuro">V</span>
-            </div>
+            <img
+              src="/verdiplan-mvp/logo.png"
+              alt="Verdiplan Logo"
+              className="h-24 w-auto"
+            />
           </div>
-          <CardTitle className="text-3xl font-bold text-verde-escuro">
-            VERDIPLAN
-          </CardTitle>
           <p className="text-sm text-gray-600">
             Gestão de Paisagismo e Urbanização
           </p>
