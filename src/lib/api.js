@@ -1,6 +1,8 @@
-const baseUrl = import.meta.env.VITE_API_URL || 'https://api.facilitaai.com.br'
+const baseUrl = import.meta.env.VITE_API_URL || 'https://api.facilitaai.com.br/verdiplan'
 
 const tokenKey = 'verdiplan_token'
+
+export const API_BASE_URL = baseUrl
 
 export function getToken() {
   try {
@@ -46,16 +48,35 @@ export const api = {
       if (data?.token) setToken(data.token)
       return data
     } catch (e) {
-      setToken('mock-token')
-      return { token: 'mock-token', user: { email } }
+      // Only use mock token if no API URL is configured
+      if (!baseUrl || baseUrl.includes('localhost')) {
+        setToken('mock-token')
+        return { token: 'mock-token', user: { email } }
+      }
+      // Re-throw error if we have a real API configured
+      throw e
     }
   },
 
   async tasks() {
     try {
       const list = await request('/tasks')
-      return Array.isArray(list) ? list : []
-    } catch {
+      if (!Array.isArray(list)) {
+        console.error('API tasks() não retornou array:', list)
+        return []
+      }
+
+      // Normalize backend data to frontend format
+      return list.map(task => ({
+        ...task,
+        id: task._id || task.id,
+        date: task.scheduledDate ? new Date(task.scheduledDate).toLocaleDateString('pt-BR') : '',
+        time: task.scheduledTime || '',
+        photos: Array.isArray(task.photos) ? task.photos.length : 0,
+        status: task.status === 'pending' ? 'Pendente' : task.status === 'completed' ? 'Concluída' : task.status === 'cancelled' ? 'Cancelada' : task.status
+      }))
+    } catch (e) {
+      console.error('Erro ao buscar tarefas:', e)
       return mockTasks
     }
   },
@@ -63,7 +84,17 @@ export const api = {
   async task(id) {
     try {
       const item = await request(`/tasks/${id}`)
-      return item
+      if (!item) return null
+
+      // Normalize backend data to frontend format
+      return {
+        ...item,
+        id: item._id || item.id,
+        date: item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('pt-BR') : '',
+        time: item.scheduledTime || '',
+        photos: Array.isArray(item.photos) ? item.photos.length : 0,
+        status: item.status === 'pending' ? 'Pendente' : item.status === 'completed' ? 'Concluída' : item.status === 'cancelled' ? 'Cancelada' : item.status
+      }
     } catch {
       return mockTasks.find(t => String(t.id) === String(id)) || null
     }
@@ -75,6 +106,54 @@ export const api = {
       return Array.isArray(photos) ? photos : []
     } catch {
       return []
+    }
+  },
+
+  async taskCreate(payload) {
+    try {
+      const created = await request('/tasks', { method: 'POST', body: payload })
+      return created
+    } catch (e) {
+      console.error('Erro ao criar tarefa:', e)
+      throw e
+    }
+  },
+
+  async taskUpdate(id, payload) {
+    try {
+      const updated = await request(`/tasks/${id}`, { method: 'PATCH', body: payload })
+      return updated
+    } catch (e) {
+      console.error('Erro ao atualizar tarefa:', e)
+      throw e
+    }
+  },
+
+  async taskUploadPhotos(taskId, files) {
+    try {
+      const formData = new FormData()
+      for (let i = 0; i < files.length; i++) {
+        formData.append('photos', files[i])
+      }
+
+      const auth = getToken()
+      const res = await fetch(`${baseUrl}/tasks/${taskId}/photos`, {
+        method: 'POST',
+        headers: {
+          ...(auth ? { Authorization: `Bearer ${auth}` } : {})
+        },
+        body: formData
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text || `HTTP ${res.status}`)
+      }
+
+      return await res.json()
+    } catch (e) {
+      console.error('Erro ao enviar fotos:', e)
+      throw e
     }
   },
 
@@ -100,7 +179,8 @@ export const api = {
     try {
       const created = await request('/inventory', { method: 'POST', body: payload })
       return created
-    } catch {
+    } catch (e) {
+      console.error('Erro ao criar item de inventário:', e)
       const id = mockInventory.length ? Math.max(...mockInventory.map(i => i.id)) + 1 : 1
       return { id, ...payload }
     }

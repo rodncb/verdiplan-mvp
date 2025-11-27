@@ -4,7 +4,7 @@ import { Layout } from '../components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { mockTasks } from '../data/mock'
-import { api } from '../lib/api'
+import { api, API_BASE_URL } from '../lib/api'
 import { db } from '../lib/db'
 import { syncQueue } from '../lib/syncQueue'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
@@ -189,7 +189,7 @@ export function TaskDetail() {
                 {photos.map((photo, idx) => (
                   <div key={photo.url || idx} className="relative aspect-square bg-gray-200 rounded-md overflow-hidden">
                     <img
-                      src={photo.url}
+                      src={photo.url?.startsWith('http') ? photo.url : `${API_BASE_URL}${photo.url}`}
                       alt={photo.description || `Foto ${idx + 1}`}
                       className="w-full h-full object-cover"
                       onError={(e) => {

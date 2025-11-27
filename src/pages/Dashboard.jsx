@@ -1,13 +1,31 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { CheckCircle, Clock, MapPin, ListTodo } from 'lucide-react'
-import { mockTasks, areas } from '../data/mock'
+import { areas } from '../data/mock'
+import { api } from '../lib/api'
 
 export function Dashboard() {
   const navigate = useNavigate()
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      try {
+        const list = await api.tasks()
+        if (active) setTasks(Array.isArray(list) ? list : [])
+      } catch (e) {
+        console.error('Erro ao carregar tarefas:', e)
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+    return () => { active = false }
+  }, [])
 
   const todayStr = useMemo(() => {
     const d = new Date()
@@ -18,9 +36,9 @@ export function Dashboard() {
   }, [])
 
   const stats = useMemo(() => {
-    const todayTasks = mockTasks.filter(t => t.date === todayStr).length
-    const pending = mockTasks.filter(t => t.status === 'Pendente').length
-    const completed = mockTasks.filter(t => t.status === 'Concluída').length
+    const todayTasks = tasks.filter(t => t.date === todayStr).length
+    const pending = tasks.filter(t => t.status === 'Pendente').length
+    const completed = tasks.filter(t => t.status === 'Concluída').length
     const areaCount = areas.length
     return [
       { title: 'Tarefas Hoje', value: String(todayTasks), icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -28,7 +46,7 @@ export function Dashboard() {
       { title: 'Concluídas', value: String(completed), icon: CheckCircle, color: 'text-verde-escuro', bg: 'bg-green-50' },
       { title: 'Áreas', value: String(areaCount), icon: MapPin, color: 'text-laranja', bg: 'bg-orange-50' }
     ]
-  }, [todayStr])
+  }, [tasks, todayStr])
 
   const parseDate = (d) => {
     const [dd, mm, yyyy] = d.split('/')
@@ -49,23 +67,23 @@ export function Dashboard() {
       start.setDate(start.getDate() - w * 7)
       const end = new Date(start)
       end.setDate(end.getDate() + 6)
-      const count = mockTasks.filter(t => {
+      const count = tasks.filter(t => {
         const dt = parseDate(t.date)
         return dt >= start && dt <= end
       }).length
       return { label: `Sem ${4 - w}`, tarefas: count }
     }).reverse()
     return weeks
-  }, [])
+  }, [tasks])
 
   const topAreas = useMemo(() => {
     const counts = {}
-    mockTasks.forEach(t => { counts[t.area] = (counts[t.area] || 0) + 1 })
+    tasks.forEach(t => { counts[t.area] = (counts[t.area] || 0) + 1 })
     return Object.entries(counts)
       .map(([area, tarefas]) => ({ area, tarefas }))
       .sort((a, b) => b.tarefas - a.tarefas)
       .slice(0, 5)
-  }, [])
+  }, [tasks])
 
   return (
     <Layout>
@@ -105,8 +123,8 @@ export function Dashboard() {
             <CardContent>
               <div className="flex items-end gap-3 h-40">
                 {weeklyData.map((w) => (
-                  <div key={w.label} className="flex flex-col items-center gap-2">
-                    <div className="w-8 bg-verde-escuro/80 rounded-sm" style={{ height: `${(w.tarefas || 0) * 12}px` }} />
+                  <div key={w.label} className="flex-1 flex flex-col items-center gap-2">
+                    <div className="w-full bg-verde-escuro/80 rounded-sm min-h-[8px]" style={{ height: `${Math.max(8, (w.tarefas || 0) * 12)}px` }} />
                     <div className="text-xs text-gray-600">{w.label}</div>
                   </div>
                 ))}
@@ -140,7 +158,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {mockTasks.slice(-5).reverse().map(t => (
+              {tasks.slice(-5).reverse().map(t => (
                 <div key={t.id} className="p-3 border rounded hover:shadow cursor-pointer" onClick={() => navigate(`/tasks/${t.id}`)}>
                   <div className="text-sm text-gray-700">{t.client} - {t.area}</div>
                   <div className="text-xs text-gray-600">{t.service} • {t.date} {t.time}</div>

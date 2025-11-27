@@ -28,8 +28,18 @@ export function InventoryDetail() {
     return () => { active = false }
   }, [id])
 
-  const getClientName = (cid) => clients.find(c => c.id === cid)?.name || ''
-  const getAreaName = (aid) => areas.find(a => a.id === aid)?.name || ''
+  if (loading) {
+    return (
+      <Layout>
+        <div className="space-y-4">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   if (!item) {
     return (
@@ -46,22 +56,50 @@ export function InventoryDetail() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">{item.species}</h1>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100">{item.quantity}</span>
+          <h1 className="text-3xl font-bold text-gray-900">{item.name}</h1>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100">{item.quantity} {item.unit}</span>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Informações</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-sm text-gray-700">{getClientName(item.clientId)} - {getAreaName(item.areaId)}</div>
-            <div className="text-sm text-gray-700">Estado: {item.status}</div>
-            <div className="text-sm text-gray-700">Atualizado em {item.updatedAt}</div>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Categoria</div>
+                <div className="text-sm text-gray-900 font-medium mt-1">{item.category}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Quantidade</div>
+                <div className="text-sm text-gray-900 font-medium mt-1">{item.quantity} {item.unit}</div>
+              </div>
+              {item.location && (
+                <div className="sm:col-span-2">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Localização</div>
+                  <div className="text-sm text-gray-900 mt-1">{item.location}</div>
+                </div>
+              )}
+              {item.minStock > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Estoque Mínimo</div>
+                  <div className="text-sm text-gray-900 mt-1">{item.minStock} {item.unit}</div>
+                </div>
+              )}
+              <div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Atualizado em</div>
+                <div className="text-sm text-gray-900 mt-1">{new Date(item.updatedAt).toLocaleDateString('pt-BR')}</div>
+              </div>
+            </div>
+            {item.notes && (
+              <div className="pt-2 border-t border-gray-200">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Observações</div>
+                <div className="text-sm text-gray-900 mt-1">{item.notes}</div>
+              </div>
+            )}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded">{error}</div>
             )}
-            {item.observations && <div className="text-sm text-gray-700">{item.observations}</div>}
           </CardContent>
         </Card>
 

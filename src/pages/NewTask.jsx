@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { Button } from '../components/ui/button'
@@ -7,27 +7,105 @@ import { Label } from '../components/ui/label'
 import { Select } from '../components/ui/select'
 import { Textarea } from '../components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Camera, Image } from 'lucide-react'
+import { Camera, Image, X } from 'lucide-react'
 import { clients, areas, services } from '../data/mock'
+import { api } from '../lib/api'
+import { db } from '../lib/db'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 export function NewTask() {
   const navigate = useNavigate()
+  const isOnline = useOnlineStatus()
   const [selectedClient, setSelectedClient] = useState('')
   const [selectedArea, setSelectedArea] = useState('')
   const [selectedService, setSelectedService] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [observations, setObservations] = useState('')
+  const [photos, setPhotos] = useState([])
+  const fileInputRef = useRef(null)
+  const cameraInputRef = useRef(null)
 
   // Filtrar áreas baseado no cliente selecionado
   const filteredAreas = selectedClient
     ? areas.filter(area => area.clientId === parseInt(selectedClient))
     : []
 
-  const handleSubmit = (e) => {
+  const handlePhotoSelect = (e, fromCamera = false) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    // Convert files to preview objects
+    const newPhotos = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name,
+      fromCamera
+    }))
+
+    setPhotos(prev => [...prev, ...newPhotos])
+  }
+
+  const removePhoto = (index) => {
+    setPhotos(prev => {
+      const updated = [...prev]
+      // Cleanup preview URL
+      URL.revokeObjectURL(updated[index].preview)
+      updated.splice(index, 1)
+      return updated
+    })
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    alert('Tarefa salva com sucesso!')
-    navigate('/tasks')
+
+    const clientName = clients.find(c => c.id === parseInt(selectedClient))?.name || ''
+    const areaName = areas.find(a => a.id === parseInt(selectedArea))?.name || ''
+    const serviceName = services.find(s => s.id === parseInt(selectedService))?.name || ''
+
+    const payload = {
+      client: clientName,
+      area: areaName,
+      service: serviceName,
+      scheduledDate: date,
+      scheduledTime: time,
+      observations,
+      status: 'pending'
+    }
+
+    try {
+      // Create task first
+      const createdTask = await api.taskCreate(payload)
+      const taskId = createdTask._id || createdTask.id
+
+      // If we have photos, handle them
+      if (photos.length > 0) {
+        if (isOnline) {
+          // Try to upload photos to backend if online
+          try {
+            const photoFiles = photos.map(p => p.file)
+            await api.taskUploadPhotos(taskId, photoFiles)
+          } catch (err) {
+            console.error('Erro ao enviar fotos para o servidor:', err)
+            // If upload fails, save locally for later sync
+            for (const photo of photos) {
+              await db.savePhoto(taskId, photo.file)
+            }
+          }
+        } else {
+          // Save locally if offline
+          for (const photo of photos) {
+            await db.savePhoto(taskId, photo.file)
+          }
+        }
+      }
+
+      alert(`Tarefa salva com sucesso! ${photos.length > 0 ? `${photos.length} foto(s) adicionada(s).` : ''}`)
+      navigate('/tasks')
+    } catch (error) {
+      console.error('Erro ao salvar tarefa:', error)
+      alert('Erro ao salvar tarefa. Verifique o console.')
+    }
   }
 
   const handleCancel = () => {
@@ -150,29 +228,78 @@ export function NewTask() {
                 />
               </div>
 
-              {/* Fotos (simulado) */}
+              {/* Fotos */}
               <div className="space-y-3">
-                <Label>Fotos</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-verde-medio transition-colors">
-                  <Camera className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <Label>Fotos {!isOnline && <span className="text-sm text-orange-600">(Offline - fotos serão sincronizadas)</span>}</Label>
+
+                {/* Hidden inputs */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handlePhotoSelect(e, false)}
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => handlePhotoSelect(e, true)}
+                />
+
+                {/* Buttons */}
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant="outline"
-                    className="mb-2"
-                    onClick={() => alert('Funcionalidade de foto será implementada na versão completa')}
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex-1"
                   >
-                    Adicionar Foto
+                    <Camera className="w-4 h-4 mr-2" />
+                    Tirar Foto
                   </Button>
-                  <p className="text-xs text-gray-500">
-                    Tire fotos da área após realizar o serviço
-                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1"
+                  >
+                    <Image className="w-4 h-4 mr-2" />
+                    Galeria
+                  </Button>
                 </div>
 
-                {/* Preview fake */}
-                <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                  <Image className="w-5 h-5 text-verde-escuro" />
-                  <span className="font-medium">3 fotos adicionadas</span>
-                </div>
+                {/* Photo previews */}
+                {photos.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo.preview}
+                          alt={`Foto ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border-2 border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <p className="text-xs text-gray-500 mt-1 truncate">{photo.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {photos.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Nenhuma foto adicionada
+                  </p>
+                )}
               </div>
 
               {/* Botões */}

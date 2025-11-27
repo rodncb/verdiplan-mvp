@@ -68,7 +68,7 @@ export function TaskList() {
     if (dateFrom) list = list.filter(t => parseDate(t.date) >= parseDate(dateFrom))
     if (dateTo) list = list.filter(t => parseDate(t.date) <= parseDate(dateTo))
     return list
-  }, [filterClient, filterArea, filterService, filterStatus, search, dateFrom, dateTo])
+  }, [tasks, filterClient, filterArea, filterService, filterStatus, search, dateFrom, dateTo])
 
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / pageSize))
   const pageTasks = useMemo(() => {

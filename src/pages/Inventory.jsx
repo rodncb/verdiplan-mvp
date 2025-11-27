@@ -41,16 +41,22 @@ export function Inventory() {
 
   const items = useMemo(() => {
     return (itemsData || []).filter(item => {
-      if (filterClient && item.clientId !== parseInt(filterClient)) return false
-      if (filterArea && item.areaId !== parseInt(filterArea)) return false
-      if (filterStatus && item.status !== filterStatus) return false
-      if (search && !item.species.toLowerCase().includes(search.toLowerCase())) return false
+      // Filtro por cliente/área via location
+      if (filterClient) {
+        const clientName = clients.find(c => c.id === parseInt(filterClient))?.name
+        if (!item.location || !item.location.includes(clientName)) return false
+      }
+      if (filterArea) {
+        const areaName = areas.find(a => a.id === parseInt(filterArea))?.name
+        if (!item.location || !item.location.includes(areaName)) return false
+      }
+      // Filtro por categoria (mapeado para status antigo)
+      if (filterStatus && item.category !== filterStatus) return false
+      // Busca por nome
+      if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
   }, [itemsData, filterClient, filterArea, filterStatus, search])
-
-  const getClientName = (id) => clients.find(c => c.id === id)?.name || ''
-  const getAreaName = (id) => areas.find(a => a.id === id)?.name || ''
 
   return (
     <Layout>
@@ -80,17 +86,22 @@ export function Inventory() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="f-status">Estado</Label>
+              <Label htmlFor="f-status">Categoria</Label>
               <Select id="f-status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                <option value="">Todos</option>
-                <option value="bom">bom</option>
-                <option value="regular">regular</option>
-                <option value="ruim">ruim</option>
+                <option value="">Todas</option>
+                <option value="Plantas">Plantas</option>
+                <option value="Árvores">Árvores</option>
+                <option value="Arbustos">Arbustos</option>
+                <option value="Ferramentas">Ferramentas</option>
+                <option value="Insumos">Insumos</option>
+                <option value="Equipamentos">Equipamentos</option>
+                <option value="Materiais">Materiais</option>
+                <option value="Outros">Outros</option>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="f-search">Espécie</Label>
-              <Input id="f-search" placeholder="Buscar por espécie" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <Label htmlFor="f-search">Nome</Label>
+              <Input id="f-search" placeholder="Buscar por nome" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </div>
         </div>
@@ -111,18 +122,22 @@ export function Inventory() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {items.map(item => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/inventory/${item.id}`)}>
+                <Card key={item._id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/inventory/${item._id}`)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center justify-between">
-                      <span className="font-bold text-gray-900">{item.species}</span>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">{item.quantity}</span>
+                      <span className="font-bold text-gray-900">{item.name}</span>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">{item.quantity} {item.unit}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div className="text-sm text-gray-600">{getClientName(item.clientId)} - {getAreaName(item.areaId)}</div>
-                    <div className="text-sm text-gray-600">Atualizado em {item.updatedAt}</div>
-                    <div className="text-sm">
-                      <span className={item.status === 'bom' ? 'text-green-700' : item.status === 'regular' ? 'text-yellow-700' : 'text-red-700'}>{item.status}</span>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">{item.category}</span>
+                    </div>
+                    {item.location && (
+                      <div className="text-sm text-gray-600">{item.location}</div>
+                    )}
+                    <div className="text-sm text-gray-500">
+                      Atualizado em {new Date(item.updatedAt).toLocaleDateString('pt-BR')}
                     </div>
                   </CardContent>
                 </Card>
