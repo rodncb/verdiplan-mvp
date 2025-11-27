@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://rodncb.github.io/verdiplan-mvp",
+  "homepage": "https://verdiplan.facilitaai.com.br",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "cp dist/index.html dist/404.html && echo verdiplan.facilitaai.com.br > dist/CNAME",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",

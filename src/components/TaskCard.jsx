@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, Image } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
 
 export function TaskCard({ task }) {
+  const navigate = useNavigate()
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/tasks/${task.id}`)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-bold text-gray-900">
           {task.client} - {task.area}

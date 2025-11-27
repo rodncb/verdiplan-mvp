@@ -4,16 +4,28 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { api } from '../lib/api'
 
 export function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = (e) => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleLogin = async (e) => {
     e.preventDefault()
-    // Qualquer email/senha aceita
-    navigate('/dashboard')
+    setLoading(true)
+    setError('')
+    try {
+      await api.login(email, password)
+      navigate('/dashboard')
+    } catch (err) {
+      setError('Falha no login')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -22,7 +34,7 @@ export function Login() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img
-              src="/verdiplan-mvp/logo.png"
+              src="/logo.png"
               alt="Verdiplan Logo"
               className="h-24 w-auto"
             />
@@ -58,9 +70,12 @@ export function Login() {
               />
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
               Entrar
             </Button>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded mt-3">{error}</div>
+            )}
           </form>
         </CardContent>
       </Card>

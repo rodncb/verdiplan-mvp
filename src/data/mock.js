@@ -81,3 +81,23 @@ export const mockTasks = [
     status: 'Concluída'
   }
 ];
+
+export const inventory = [
+  { id: 1, clientId: 1, areaId: 1, species: 'Ipê Amarelo', quantity: 12, status: 'bom', updatedAt: '12/11/2025', observations: 'Podas recentes' },
+  { id: 2, clientId: 1, areaId: 5, species: 'Jabuticabeira', quantity: 8, status: 'regular', updatedAt: '14/11/2025' },
+  { id: 3, clientId: 2, areaId: 19, species: 'Palmeira', quantity: 20, status: 'bom', updatedAt: '15/11/2025' },
+  { id: 4, clientId: 2, areaId: 24, species: 'Hortaliças', quantity: 35, status: 'ruim', updatedAt: '16/11/2025', observations: 'Precisam de adubação' }
+];
+
+export const users = [
+  { id: 1, name: 'Murillo', email: 'murillo@verdiplan.com.br', role: 'Admin', active: true },
+  { id: 2, name: 'João', email: 'joao@verdiplan.com.br', role: 'Gestor', active: true },
+  { id: 3, name: 'Maria', email: 'maria@verdiplan.com.br', role: 'Operacional', active: true },
+  { id: 4, name: 'Pedro', email: 'pedro@verdiplan.com.br', role: 'Operador', active: true }
+];
+
+export const reports = [
+  { id: 1, type: 'daily', period: '12/11/2025', client: 'TerrasAlpha Resende 1', createdAt: '12/11/2025', status: 'enviado' },
+  { id: 2, type: 'weekly', period: '04/11/2025 - 10/11/2025', client: 'Todos', createdAt: '11/11/2025', status: 'pendente' },
+  { id: 3, type: 'monthly', period: 'Novembro/2025', client: 'TerrasAlpha Resende 2', createdAt: '10/11/2025', status: 'pendente' }
+];
