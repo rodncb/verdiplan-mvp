@@ -1,14 +1,37 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/verdiplan-mvp/vite.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>verdiplan-mvp</title>
-    <script type="module" crossorigin src="/verdiplan-mvp/assets/index-Dc8kObIS.js"></script>
-    <link rel="stylesheet" crossorigin href="/verdiplan-mvp/assets/index-ZFbqVF6S.css">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2d5f3e" />
+    <meta name="description" content="Sistema de gestão de paisagismo com suporte offline" />
+
+    <!-- Apple PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Verdiplan" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
+    <title>Verdiplan - Gestão de Paisagismo</title>
+    <script type="module" crossorigin src="/assets/index-C-QdsfkH.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-2-e1X5fx.css">
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('✅ Service Worker registrado:', reg))
+            .catch(err => console.log('❌ Erro ao registrar Service Worker:', err))
+        })
+      }
+    </script>
   </body>
 </html>
