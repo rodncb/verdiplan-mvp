@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Edit2, Trash2 } from 'lucide-react'
 import { clients, areas, inventory as mockInventory } from '../data/mock'
 import { api } from '../lib/api'
 
@@ -27,6 +28,22 @@ export function InventoryDetail() {
     })()
     return () => { active = false }
   }, [id])
+
+  const handleEdit = () => {
+    navigate(`/inventory/${id}/edit`)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja deletar este item?')) return
+
+    try {
+      await api.inventoryDelete(id)
+      alert('Item deletado com sucesso!')
+      navigate('/inventory')
+    } catch (error) {
+      alert('Erro ao deletar item')
+    }
+  }
 
   if (loading) {
     return (
@@ -57,7 +74,25 @@ export function InventoryDetail() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">{item.name}</h1>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100">{item.quantity} {item.unit}</span>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={handleEdit}
+              className="gap-2"
+            >
+              <Edit2 className="w-4 h-4" />
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Deletar
+            </Button>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100">{item.quantity} {item.unit}</span>
+          </div>
         </div>
 
         <Card>

@@ -162,22 +162,24 @@ export function Inventory() {
                       <div className="text-sm text-gray-500">
                         Atualizado em {new Date(item.updatedAt).toLocaleDateString('pt-BR')}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={(e) => handleEdit(e, item._id)}
-                          className="h-8 w-8 p-0"
+                          className="h-9 px-3 gap-1.5"
                         >
                           <Edit2 className="w-4 h-4" />
+                          <span className="text-xs">Editar</span>
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={(e) => handleDelete(e, item._id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          className="h-9 px-3 gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4" />
+                          <span className="text-xs">Deletar</span>
                         </Button>
                       </div>
                     </div>

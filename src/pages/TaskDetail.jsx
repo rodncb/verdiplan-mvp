@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Edit2, Trash2 } from 'lucide-react'
 import { mockTasks } from '../data/mock'
 import { api, API_BASE_URL } from '../lib/api'
 import { db } from '../lib/db'
@@ -105,6 +106,22 @@ export function TaskDetail() {
     }
   }
 
+  const handleEdit = () => {
+    navigate(`/tasks/${id}/edit`)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja deletar esta tarefa?')) return
+
+    try {
+      await api.taskDelete(id)
+      alert('Tarefa deletada com sucesso!')
+      navigate('/tasks')
+    } catch (error) {
+      alert('Erro ao deletar tarefa')
+    }
+  }
+
   if (!task) {
     return (
       <Layout>
@@ -121,7 +138,25 @@ export function TaskDetail() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">{task.client} - {task.area}</h1>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-verde-escuro text-white">{task.status}</span>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={handleEdit}
+              className="gap-2"
+            >
+              <Edit2 className="w-4 h-4" />
+              Editar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Deletar
+            </Button>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-verde-escuro text-white">{task.status}</span>
+          </div>
         </div>
 
         <Card>

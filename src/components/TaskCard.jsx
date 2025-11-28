@@ -60,17 +60,19 @@ export function TaskCard({ task, onDelete }) {
               size="sm"
               variant="ghost"
               onClick={handleEdit}
-              className="h-8 w-8 p-0"
+              className="h-9 px-3 gap-1.5"
             >
               <Edit2 className="w-4 h-4" />
+              <span className="text-xs">Editar</span>
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={handleDelete}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="h-9 px-3 gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
+              <span className="text-xs">Deletar</span>
             </Button>
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-verde-escuro text-white">
               {task.status}
