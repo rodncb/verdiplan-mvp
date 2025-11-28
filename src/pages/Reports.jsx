@@ -55,8 +55,19 @@ export function Reports() {
 
   const handleGenerate = async () => {
     setGenerating(true)
-    const createdAt = new Date().toLocaleDateString()
-    const period = dateFrom && dateTo ? `${dateFrom} - ${dateTo}` : dateFrom || ''
+    const createdAt = new Date().toLocaleDateString('pt-BR')
+
+    // Converter datas de YYYY-MM-DD para DD/MM/YYYY
+    const formatDate = (dateStr) => {
+      if (!dateStr) return ''
+      const [year, month, day] = dateStr.split('-')
+      return `${day}/${month}/${year}`
+    }
+
+    const period = dateFrom && dateTo
+      ? `${formatDate(dateFrom)} - ${formatDate(dateTo)}`
+      : formatDate(dateFrom) || ''
+
     try {
       const created = await api.reportsGenerate({ type, period, client: clientName, createdAt })
       const newReport = created || { id: reports.length + 1, type, period, client: clientName, createdAt, status: 'pendente' }
