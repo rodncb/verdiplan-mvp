@@ -25,21 +25,29 @@ export function TaskList() {
   const [error, setError] = useState('')
   const [tasks, setTasks] = useState([])
 
+  const loadTasks = async () => {
+    try {
+      const list = await api.tasks()
+      setTasks(Array.isArray(list) ? list : [])
+    } catch (e) {
+      setError('Falha ao carregar tarefas, usando dados mockados')
+      setTasks(mockTasks)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
     ;(async () => {
-      try {
-        const list = await api.tasks()
-        if (active) setTasks(Array.isArray(list) ? list : [])
-      } catch (e) {
-        setError('Falha ao carregar tarefas, usando dados mockados')
-        if (active) setTasks(mockTasks)
-      } finally {
-        if (active) setLoading(false)
-      }
+      if (active) await loadTasks()
     })()
     return () => { active = false }
   }, [])
+
+  const handleDelete = (taskId) => {
+    setTasks(tasks.filter(t => t.id !== taskId))
+  }
 
   const filteredAreas = useMemo(() => {
     return filterClient ? areas.filter(a => a.clientId === parseInt(filterClient)) : []
@@ -200,7 +208,7 @@ export function TaskList() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {pageTasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
+                <TaskCard key={task.id} task={task} onDelete={handleDelete} />
               ))}
             </div>
           )}

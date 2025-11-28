@@ -111,7 +111,12 @@ export const api = {
 
   async taskCreate(payload) {
     try {
-      const created = await request('/tasks', { method: 'POST', body: payload })
+      // Se está online, marca como completed. Se offline, será pending até sincronizar
+      const payloadWithStatus = {
+        ...payload,
+        status: 'completed'
+      }
+      const created = await request('/tasks', { method: 'POST', body: payloadWithStatus })
       return created
     } catch (e) {
       console.error('Erro ao criar tarefa:', e)
@@ -125,6 +130,16 @@ export const api = {
       return updated
     } catch (e) {
       console.error('Erro ao atualizar tarefa:', e)
+      throw e
+    }
+  },
+
+  async taskDelete(id) {
+    try {
+      await request(`/tasks/${id}`, { method: 'DELETE' })
+      return { success: true }
+    } catch (e) {
+      console.error('Erro ao deletar tarefa:', e)
       throw e
     }
   },
@@ -186,6 +201,26 @@ export const api = {
     }
   },
 
+  async inventoryUpdate(id, payload) {
+    try {
+      const updated = await request(`/inventory/${id}`, { method: 'PUT', body: payload })
+      return updated
+    } catch (e) {
+      console.error('Erro ao atualizar item de inventário:', e)
+      throw e
+    }
+  },
+
+  async inventoryDelete(id) {
+    try {
+      await request(`/inventory/${id}`, { method: 'DELETE' })
+      return { success: true }
+    } catch (e) {
+      console.error('Erro ao deletar item de inventário:', e)
+      throw e
+    }
+  },
+
   async users() {
     try {
       const list = await request('/users')
@@ -225,7 +260,7 @@ export const api = {
 
   async reportsGenerate(payload) {
     try {
-      const created = await request('/reports', { method: 'POST', body: payload })
+      const created = await request('/reports/generate', { method: 'POST', body: payload })
       return created
     } catch {
       const id = mockReports.length ? Math.max(...mockReports.map(r => r.id)) + 1 : 1

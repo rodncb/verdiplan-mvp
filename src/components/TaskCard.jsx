@@ -1,9 +1,29 @@
 import { useNavigate } from 'react-router-dom'
-import { Calendar, Clock, Image } from 'lucide-react'
+import { Calendar, Clock, Image, Edit2, Trash2 } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
+import { Button } from './ui/button'
+import { api } from '../lib/api'
 
-export function TaskCard({ task }) {
+export function TaskCard({ task, onDelete }) {
   const navigate = useNavigate()
+
+  const handleDelete = async (e) => {
+    e.stopPropagation()
+    if (!confirm('Tem certeza que deseja deletar esta tarefa?')) return
+
+    try {
+      await api.taskDelete(task.id)
+      if (onDelete) onDelete(task.id)
+    } catch (error) {
+      alert('Erro ao deletar tarefa')
+    }
+  }
+
+  const handleEdit = (e) => {
+    e.stopPropagation()
+    navigate(`/tasks/${task.id}/edit`)
+  }
+
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/tasks/${task.id}`)}>
       <CardHeader className="pb-3">
@@ -35,9 +55,27 @@ export function TaskCard({ task }) {
             <span>{task.photos} fotos</span>
           </div>
 
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-verde-escuro text-white">
-            {task.status}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleEdit}
+              className="h-8 w-8 p-0"
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleDelete}
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-verde-escuro text-white">
+              {task.status}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

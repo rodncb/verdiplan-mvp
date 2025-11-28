@@ -26,7 +26,7 @@ export function Reports() {
   // load reports
   useEffect(() => {
     let active = true
-    ;(async () => {
+    const loadReports = async () => {
       try {
         const list = await api.reports()
         if (active) setReports(Array.isArray(list) ? list : [])
@@ -36,9 +36,22 @@ export function Reports() {
       } finally {
         if (active) setLoading(false)
       }
-    })()
-    return () => { active = false }
-  }, [])
+    }
+
+    loadReports()
+
+    // Pooling: atualizar a cada 5 segundos se houver relatórios pendentes
+    const interval = setInterval(() => {
+      if (reports.some(r => r.status === 'pendente')) {
+        loadReports()
+      }
+    }, 5000)
+
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
+  }, [reports])
 
   const handleGenerate = async () => {
     setGenerating(true)
@@ -80,7 +93,55 @@ export function Reports() {
     }
   }
 
-  const handleSend = () => alert('Email enviado!')
+  const handleSend = async (reportId) => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://api.facilitaai.com.br/verdiplan'
+      const token = localStorage.getItem('verdiplan_token') || ''
+      const url = `${baseUrl}/reports/${reportId}/send`
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!response.ok) throw new Error('Erro ao enviar email')
+
+      alert('Email enviado com sucesso!')
+
+      // Atualizar lista de relatórios
+      const list = await api.reports()
+      setReports(Array.isArray(list) ? list : [])
+
+    } catch (error) {
+      alert('Erro ao enviar email. Verifique as configurações de SMTP no backend.')
+    }
+  }
+
+  const handleDelete = async (reportId) => {
+    if (!confirm('Tem certeza que deseja deletar este relatório?')) return
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://api.facilitaai.com.br/verdiplan'
+      const token = localStorage.getItem('verdiplan_token') || ''
+      const url = `${baseUrl}/reports/${reportId}`
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (!response.ok) throw new Error('Erro ao deletar relatório')
+
+      alert('Relatório deletado com sucesso!')
+
+      // Atualizar lista de relatórios
+      const list = await api.reports()
+      setReports(Array.isArray(list) ? list : [])
+
+    } catch (error) {
+      alert('Erro ao deletar relatório.')
+    }
+  }
 
   return (
     <Layout>
@@ -155,16 +216,45 @@ export function Reports() {
                 </thead>
                 <tbody>
                   {reports.map(r => (
-                    <tr key={r.id} className="border-t">
+                    <tr key={r._id || r.id} className="border-t">
                       <td className="p-2">{r.type}</td>
                       <td className="p-2">{r.period}</td>
                       <td className="p-2">{r.client || 'Todos'}</td>
-                      <td className="p-2">{r.createdAt}</td>
-                      <td className="p-2"><span className="text-gray-800">{r.status}</span></td>
+                      <td className="p-2">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</td>
+                      <td className="p-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          r.status === 'gerado' ? 'bg-green-100 text-green-800' :
+                          r.status === 'enviado' ? 'bg-blue-100 text-blue-800' :
+                          r.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {r.status === 'pendente' ? '⏳ Gerando...' : r.status}
+                        </span>
+                      </td>
                       <td className="p-2">
                         <div className="flex gap-2">
-                          <Button size="sm" onClick={() => handleDownload(r.id)}>Download PDF</Button>
-                          <Button size="sm" variant="secondary" onClick={handleSend}>Enviar Email</Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleDownload(r._id || r.id)}
+                            disabled={r.status === 'pendente' || r.status === 'erro'}
+                          >
+                            Download
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleSend(r._id || r.id)}
+                            disabled={r.status === 'pendente' || r.status === 'erro'}
+                          >
+                            Enviar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(r._id || r.id)}
+                          >
+                            Deletar
+                          </Button>
                         </div>
                       </td>
                     </tr>

@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button'
 import { Select } from '../components/ui/select'
 import { Label } from '../components/ui/label'
 import { Input } from '../components/ui/input'
+import { Edit2, Trash2 } from 'lucide-react'
 import { clients, areas, inventory as mockInventory } from '../data/mock'
 import { api } from '../lib/api'
 
@@ -19,21 +20,42 @@ export function Inventory() {
   const [error, setError] = useState('')
   const [itemsData, setItemsData] = useState([])
 
+  const loadInventory = async () => {
+    try {
+      const list = await api.inventory()
+      setItemsData(Array.isArray(list) ? list : [])
+    } catch (e) {
+      setError('Falha ao carregar inventário, usando dados mockados')
+      setItemsData(mockInventory)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
     ;(async () => {
-      try {
-        const list = await api.inventory()
-        if (active) setItemsData(Array.isArray(list) ? list : [])
-      } catch (e) {
-        setError('Falha ao carregar inventário, usando dados mockados')
-        if (active) setItemsData(mockInventory)
-      } finally {
-        if (active) setLoading(false)
-      }
+      if (active) await loadInventory()
     })()
     return () => { active = false }
   }, [])
+
+  const handleDelete = async (e, itemId) => {
+    e.stopPropagation()
+    if (!confirm('Tem certeza que deseja deletar este item?')) return
+
+    try {
+      await api.inventoryDelete(itemId)
+      setItemsData(itemsData.filter(i => i._id !== itemId))
+    } catch (error) {
+      alert('Erro ao deletar item')
+    }
+  }
+
+  const handleEdit = (e, itemId) => {
+    e.stopPropagation()
+    navigate(`/inventory/${itemId}/edit`)
+  }
 
   const filteredAreas = useMemo(() => {
     return filterClient ? areas.filter(a => a.clientId === parseInt(filterClient)) : []
@@ -136,8 +158,28 @@ export function Inventory() {
                     {item.location && (
                       <div className="text-sm text-gray-600">{item.location}</div>
                     )}
-                    <div className="text-sm text-gray-500">
-                      Atualizado em {new Date(item.updatedAt).toLocaleDateString('pt-BR')}
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-500">
+                        Atualizado em {new Date(item.updatedAt).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => handleEdit(e, item._id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => handleDelete(e, item._id)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
